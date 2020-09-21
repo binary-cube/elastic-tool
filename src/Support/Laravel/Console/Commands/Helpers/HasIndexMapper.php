@@ -31,7 +31,7 @@ trait HasIndexMapper
         $indices = $this->esTool->container()->indices();
         $indices = empty($group) ? $indices : $indices->inGroup($group);
 
-        $source = \in_array('all', $source) ? $indices->ids() : $source;
+        $source = \in_array('all', $source) ? $indices->keys()->all() : $source;
 
         foreach ($source as $id) {
             if (! $indices->has($id)) {

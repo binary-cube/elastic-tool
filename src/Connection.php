@@ -81,13 +81,13 @@ class Connection extends Component
      */
     protected function make(): Client
     {
-        $config = $this->config;
+        $config = $this->config->all();
 
-        if (isset($this->logger) && $this->config['enableLogging']) {
+        if (isset($this->logger) && $config['enableLogging']) {
             $config['logger'] = $this->logger;
         }
 
-        return ClientBuilder::fromConfig($config->all(), true);
+        return ClientBuilder::fromConfig($config, true);
     }
 
     /**

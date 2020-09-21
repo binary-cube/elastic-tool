@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace BinaryCube\ElasticTool\Collection;
 
 use BinaryCube\ElasticTool\Index;
+use BinaryCube\ElasticTool\Support\Collection;
 
 /**
  * Class IndexCollection
  *
  * @method Index[]     __invoke()
- * @method $this       set(string $id, Index $item)
- * @method $this       remove(string $id)
- * @method Index       get(string $id)
+ * @method $this       put(string $id, Index $item)
+ * @method $this       forget(string $id)
+ * @method Index       get(string $id, $default = null)
  * @method Index|mixed getIfSet(string $id, $default = null)
  * @method Index[]     all()()
  * @method $this       clear()

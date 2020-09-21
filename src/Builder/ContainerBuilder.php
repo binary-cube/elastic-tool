@@ -82,7 +82,7 @@ class ContainerBuilder extends Component
         foreach ($connections as $id => $config) {
             $entry = new Connection($id, $config, $this->logger);
 
-            $container->connections()->set($entry->id(), $entry);
+            $container->connections()->put($entry->id(), $entry);
 
             $this->logger->debug(\vsprintf('Connection with ID: "%s" has been created', [$entry->id()]));
         }
@@ -108,6 +108,7 @@ class ContainerBuilder extends Component
             'params'     => [],
             'aliases'    => [],
             'type'       => null,
+            'parameters' => [],
         ];
 
         foreach ($mappings as $id => $mapping) {
@@ -140,7 +141,7 @@ class ContainerBuilder extends Component
 
             $entry = new $instance($id, $name, $params, $aliases, $type, $this->logger);
 
-            $container->mappings()->set($entry->id(), $entry);
+            $container->mappings()->put($entry->id(), $entry);
 
             $this->logger->debug(\vsprintf('Mapping with ID: "%s" has been created', [$entry->id()]));
         }//end foreach
@@ -167,6 +168,7 @@ class ContainerBuilder extends Component
             'mapping'    => null,
             'config'     => [],
             'connection' => null,
+            'params'     => [],
         ];
 
         foreach ($indices as $id => $index) {
@@ -225,12 +227,13 @@ class ContainerBuilder extends Component
             $name       = $index['name'];
             $group      = $index['group'];
             $mapping    = $container->mappings()->getIfSet((string) $index['mapping']);
-            $params     = $index['config'];
+            $config     = $index['config'];
             $connection = $container->connections()->get($index['connection']);
+            $params     = (array) $index['params'];
 
-            $entry = new $instance($id, $name, $connection, $mapping, $group, $params, $this->logger);
+            $entry = new $instance($id, $name, $connection, $mapping, $group, $config, $params, $this->logger);
 
-            $container->indices()->set($entry->id(), $entry);
+            $container->indices()->put($entry->id(), $entry);
 
             $this->logger->debug(\vsprintf('Index with ID: "%s" has been created', [$entry->id()]));
         }//end foreach

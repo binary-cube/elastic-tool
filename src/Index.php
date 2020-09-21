@@ -6,6 +6,7 @@ namespace BinaryCube\ElasticTool;
 
 use Psr\Log\LoggerInterface;
 use BinaryCube\ElasticTool\Endpoint\CatProxyEndpoint;
+use BinaryCube\ElasticTool\Support\ParameterAwareTrait;
 use BinaryCube\ElasticTool\Endpoint\IndexProxyEndpoint;
 
 /**
@@ -13,6 +14,7 @@ use BinaryCube\ElasticTool\Endpoint\IndexProxyEndpoint;
  */
 class Index extends Component
 {
+    use ParameterAwareTrait;
 
     /**
      * @const array Default Index parameters
@@ -58,6 +60,7 @@ class Index extends Component
      * @param Mapping|null         $mapping
      * @param string|null          $group
      * @param array                $config
+     * @param array                $params     Associative array of parameters
      * @param LoggerInterface|null $logger
      */
     public function __construct(
@@ -67,6 +70,7 @@ class Index extends Component
         Mapping $mapping = null,
         string $group = null,
         $config = [],
+        $params = [],
         $logger = null
     ) {
         parent::__construct($id, $logger);
@@ -76,6 +80,8 @@ class Index extends Component
         $this->mapping    = $mapping;
         $this->config     = Config::make(static::DEFAULTS)->merge($config);
         $this->connection = $connection;
+
+        $this->parameters()->overwrite($params);
     }
 
     /**
