@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BinaryCube\ElasticTool\Support;
 
 use Countable;
+use ArrayAccess;
 use Traversable;
 use ArrayIterator;
 use IteratorAggregate;
@@ -12,7 +13,7 @@ use IteratorAggregate;
 /**
  * Class Collection
  */
-class Collection implements Countable, IteratorAggregate
+class Collection implements ArrayAccess, Countable, IteratorAggregate
 {
 
     /**
@@ -53,7 +54,7 @@ class Collection implements Countable, IteratorAggregate
 
         if (\is_array($items)) {
             return $items;
-        } elseif ($items instanceof self) {
+        } elseif ($items instanceof Collection) {
             $arr = $items->all();
         } elseif ($items instanceof Traversable) {
             $arr = \iterator_to_array($items);
@@ -95,8 +96,10 @@ class Collection implements Countable, IteratorAggregate
      */
     public function add($values): self
     {
-        foreach ($values as $value) {
-            $this->offsetSet(null, $value);
+        $assoc = self::isAssociative($this->items);
+
+        foreach ($values as $key => $value) {
+            $this->offsetSet($assoc ? $key : null, $value);
         }
 
         return $this;
@@ -320,6 +323,45 @@ class Collection implements Countable, IteratorAggregate
     public function getIterator(): ArrayIterator
     {
         return new ArrayIterator($this->all());
+    }
+
+    /**
+     * Returns a value indicating whether the given array is an associative array.
+     *
+     * An array is associative if all its keys are strings. If `$allStrings` is false,
+     * then an array will be treated as associative if at least one of its keys is a string.
+     *
+     * Note that an empty array will NOT be considered associative.
+     *
+     * @param array $array      the array being checked
+     * @param bool  $allStrings whether the array keys must be all strings in order for
+     *                          the array to be treated as associative.
+     *
+     * @return bool whether the array is associative
+     */
+    protected static function isAssociative(array $array, bool $allStrings = true)
+    {
+        if (! \is_array($array) || empty($array)) {
+            return false;
+        }
+
+        if ($allStrings) {
+            foreach ($array as $key => $value) {
+                if (! \is_string($key)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        foreach ($array as $key => $value) {
+            if (\is_string($key)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
