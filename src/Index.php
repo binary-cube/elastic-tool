@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BinaryCube\ElasticTool;
 
-use BinaryCube\ElasticTool\Endpoint\CatProxyEndpoint;
 use Psr\Log\LoggerInterface;
+use BinaryCube\ElasticTool\Endpoint\CatProxyEndpoint;
 use BinaryCube\ElasticTool\Endpoint\IndexProxyEndpoint;
 
 /**
@@ -21,6 +21,7 @@ class Index extends Component
         'main'    => [],
         'create'  => [],
         'update'  => [],
+        'aliases' => [],
     ];
 
     /**
@@ -29,19 +30,24 @@ class Index extends Component
     protected $name;
 
     /**
+     * @var string|null
+     */
+    protected $group;
+
+    /**
+     * @var Mapping
+     */
+    protected $mapping;
+
+    /**
+     * @var Config
+     */
+    protected $config;
+
+    /**
      * @var Connection
      */
     protected $connection;
-
-    /**
-     * @var Schema
-     */
-    protected $schema;
-
-    /**
-     * @var array
-     */
-    protected $config;
 
     /**
      * Constructor.
@@ -49,7 +55,8 @@ class Index extends Component
      * @param string               $id
      * @param string               $name
      * @param Connection           $connection
-     * @param Schema|null          $schema
+     * @param Mapping|null         $mapping
+     * @param string|null          $group
      * @param array                $config
      * @param LoggerInterface|null $logger
      */
@@ -57,16 +64,18 @@ class Index extends Component
         string $id,
         string $name,
         Connection $connection,
-        Schema $schema = null,
+        Mapping $mapping = null,
+        string $group = null,
         $config = [],
         $logger = null
     ) {
         parent::__construct($id, $logger);
 
         $this->name       = $name;
+        $this->group      = $group;
+        $this->mapping    = $mapping;
+        $this->config     = Config::make(static::DEFAULTS)->merge($config);
         $this->connection = $connection;
-        $this->schema     = $schema;
-        $this->config     = Config::make(static::DEFAULTS)->mergeWith($config)->toArray();
     }
 
     /**
@@ -78,6 +87,30 @@ class Index extends Component
     }
 
     /**
+     * @return string|null
+     */
+    public function group()
+    {
+        return $this->group;
+    }
+
+    /**
+     * @return Mapping|null
+     */
+    public function mapping()
+    {
+        return $this->mapping;
+    }
+
+    /**
+     * @return Config
+     */
+    public function config(): Config
+    {
+        return $this->config;
+    }
+
+    /**
      * @return Connection
      */
     public function connection(): Connection
@@ -86,29 +119,13 @@ class Index extends Component
     }
 
     /**
-     * @return array
-     */
-    public function config(): array
-    {
-        return $this->config;
-    }
-
-    /**
-     * @return Schema|null
-     */
-    public function schema()
-    {
-        return $this->schema;
-    }
-
-    /**
-     * @param Schema $schema
+     * @param Mapping $mapping
      *
      * @return $this
      */
-    public function withSchema(Schema $schema): self
+    public function withMapping(Mapping $mapping): self
     {
-        $this->schema = $schema;
+        $this->mapping = $mapping;
 
         return $this;
     }
@@ -116,9 +133,9 @@ class Index extends Component
     /**
      * @return bool
      */
-    public function isHavingSchema(): bool
+    public function isHavingMappingSet(): bool
     {
-        return isset($this->schema);
+        return isset($this->mapping);
     }
 
     /**
@@ -148,8 +165,8 @@ class Index extends Component
     {
         $params = (
             Config::make((array) $params)
-                ->mergeWith(['index' => $this->name])
-                ->toArray()
+                ->merge(['index' => $this->name])
+                ->all()
         );
 
         $status = (
@@ -158,13 +175,7 @@ class Index extends Component
                 ->execute($params, $connection)
         );
 
-        if (isset($status[0]) && $status[0]['status'] !== 'open') {
-            return false;
-        }
-
-        unset($status);
-
-        return true;
+        return (isset($status[0]) && $status[0]['status'] === 'open');
     }
 
     /**
@@ -228,23 +239,31 @@ class Index extends Component
      */
     public function stats($params = null, Connection $connection = null)
     {
-        $params = (
-            Config::make((array) $params)
-                ->mergeWith(['index' => $this->name])
-                ->toArray()
-        );
-
         $status = (
-            (new CatProxyEndpoint($this, $this->logger))
-                ->viaMethod('indices')
+            (new IndexProxyEndpoint($this, $this->logger))
+                ->viaMethod('stats')
                 ->execute($params, $connection)
         );
 
-        return $status[0];
+        $cat = (
+            (new CatProxyEndpoint($this, $this->logger))
+                ->viaMethod('indices')
+                ->execute(
+                    Config::make((array) $params)->merge(['index' => $this->name])->all(),
+                    $connection
+                )
+        );
+
+        return (
+            Config::make([])
+                ->merge(['summary' => $cat[0]])
+                ->merge(['detailed' => $status['indices'][$this->name]])
+                ->all()
+        );
     }
 
     /**
-     * Create only the index settings without schema or aliases.
+     * Create only the index settings without mapping or aliases.
      *
      * @param null|array      $params
      * @param Connection|null $connection
@@ -256,15 +275,15 @@ class Index extends Component
     public function create($params = null, Connection $connection = null)
     {
         $params = [
-            'body' => [
+            'body' => $this->sanitizeData([
                 'settings' => (
-                    Config::make()
-                        ->mergeWith((array) $this->config['main'])
-                        ->mergeWith((array) $this->config['create'])
-                        ->mergeWith((array) $params)
-                        ->toArray()
+                    Config::make([])
+                        ->merge((array) $this->config->get('main', []))
+                        ->merge((array) $this->config->get('create', []))
+                        ->merge((array) $params)
+                        ->all()
                 ),
-            ],
+            ]),
         ];
 
         return (
@@ -275,7 +294,7 @@ class Index extends Component
     }
 
     /**
-     * Update only the index settings without schema or aliases.
+     * Update only the index settings without mapping or aliases.
      *
      * @param null|array      $params
      * @param Connection|null $connection
@@ -287,16 +306,20 @@ class Index extends Component
     public function update($params = null, Connection $connection = null)
     {
         $params = [
-            'body' => [
+            'body' => $this->sanitizeData([
                 'settings' => (
-                    Config::make()
-                        ->mergeWith((array) $this->config['main'])
-                        ->mergeWith((array) $this->config['update'])
-                        ->mergeWith((array) $params)
-                        ->toArray()
+                    Config::make([])
+                        ->merge((array) $this->config->get('main', []))
+                        ->merge((array) $this->config->get('update', []))
+                        ->merge((array) $params)
+                        ->all()
                 ),
-            ],
+            ]),
         ];
+
+        if (! isset($params['body']['settings'])) {
+            return false;
+        }
 
         return (
             (new IndexProxyEndpoint($this, $this->logger))
@@ -306,32 +329,31 @@ class Index extends Component
     }
 
     /**
-     * Update only the index schema / mapping.
+     * Update only the index mapping.
      *
      * @param null|array      $params
      * @param Connection|null $connection
      *
-     * @return mixed Return false in case there is no schema attached.
+     * @return mixed Return false in case there is no mapping attached.
      *
      * @see https://www.elastic.co/guide/en/elasticsearch/reference/master/indices-put-mapping.html
      */
-    public function updateSchema($params = null, Connection $connection = null)
+    public function updateMapping($params = null, Connection $connection = null)
     {
-        if (! $this->isHavingSchema()) {
+        if (! $this->isHavingMappingSet()) {
             return false;
         }
 
         $params = [
             'body' => (
-                Config::make()
-                    ->mergeWith((array) $params)
-                    ->mergeWith($this->schema->toArray())
-                    ->toArray()
+                Config::make((array) $params)
+                    ->merge($this->mapping->toArray())
+                    ->all()
             ),
         ];
 
-        if (! empty($this->schema->type())) {
-            $params['type'] = $this->schema->type();
+        if (! empty($this->mapping->type())) {
+            $params['type'] = $this->mapping->type();
         }
 
         return (
@@ -352,9 +374,9 @@ class Index extends Component
     public function delete($params = null, Connection $connection = null)
     {
         return (
-        (new IndexProxyEndpoint($this, $this->logger))
-            ->viaMethod('delete')
-            ->execute($params, $connection)
+            (new IndexProxyEndpoint($this, $this->logger))
+                ->viaMethod('delete')
+                ->execute($params, $connection)
         );
     }
 
@@ -384,15 +406,62 @@ class Index extends Component
     }
 
     /**
+     * @param array $config
+     *
+     * @return array
+     */
+    protected function sanitizeData(array $config): array
+    {
+        if (isset($config['settings']) && empty($config['settings'])) {
+            unset($config['settings']);
+        }
+
+        if (isset($config['mappings']) && empty($config['mappings'])) {
+            unset($config['mappings']);
+        }
+
+        if (isset($config['aliases']) && empty($config['aliases'])) {
+            unset($config['aliases']);
+        }
+
+        return $config;
+    }
+
+    /**
+     * @param bool $includeMapping
+     *
+     * @return array
+     */
+    public function toArray($includeMapping = true): array
+    {
+        $data['settings'] = (
+            Config::make([])
+                ->merge((array) $this->config->get('main', []))
+                ->merge((array) $this->config->get('create', []))
+                ->merge((array) $this->config->get('update', []))
+                ->all()
+        );
+
+        if ($includeMapping && $this->isHavingMappingSet()) {
+            $data['mappings'] = $this->mapping->toArray();
+        }
+
+        $data = $this->sanitizeData($data);
+
+        return $data;
+    }
+
+    /**
      * @return void
      */
     public function __destruct()
     {
         unset(
             $this->name,
-            $this->connection,
-            $this->schema,
-            $this->config
+            $this->group,
+            $this->mapping,
+            $this->config,
+            $this->connection
         );
 
         parent::__destruct();

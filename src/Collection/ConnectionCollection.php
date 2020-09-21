@@ -7,7 +7,7 @@ namespace BinaryCube\ElasticTool\Collection;
 use BinaryCube\ElasticTool\Connection;
 
 /**
- * Class ConnectionList
+ * Class ConnectionCollection
  *
  * @method Connection[]      __invoke()
  * @method $this            set(string $id, Connection $item)
@@ -18,7 +18,7 @@ use BinaryCube\ElasticTool\Connection;
  * @method $this            clear()
  * @method bool             has(string $id)
  */
-class ConnectionList extends BaseList
+class ConnectionCollection extends Collection
 {
     //
 }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace BinaryCube\ElasticTool\Builder;
 
-use BinaryCube\ElasticTool\Schema;
 use Psr\Log\LoggerInterface;
 use BinaryCube\ElasticTool\Index;
 use BinaryCube\ElasticTool\Config;
+use BinaryCube\ElasticTool\Mapping;
 use BinaryCube\ElasticTool\Container;
 use BinaryCube\ElasticTool\Component;
 use BinaryCube\ElasticTool\Connection;
@@ -23,7 +23,7 @@ class ContainerBuilder extends Component
      */
     const DEFAULTS = [
         'connections' => [],
-        'schemas'     => [],
+        'mappings'     => [],
         'indices'     => [],
     ];
 
@@ -57,13 +57,13 @@ class ContainerBuilder extends Component
      */
     public function build(array $config): Container
     {
-        $config = Config::make(static::DEFAULTS)->mergeWith($config)->toArray();
+        $config = Config::make(static::DEFAULTS)->merge($config)->all();
 
         $container = new Container();
 
         $this
             ->createConnections($container, $config)
-            ->createSchemas($container, $config)
+            ->createMappings($container, $config)
             ->createIndices($container, $config);
 
         return $container;
@@ -94,13 +94,13 @@ class ContainerBuilder extends Component
 
     /**
      * @param Container $container
-     * @param array     $schema
+     * @param array     $config
      *
      * @return $this
      */
-    protected function createSchemas(Container $container, array $schema): self
+    protected function createMappings(Container $container, array $config): self
     {
-        $schemas = $schema['schemas'];
+        $mappings = $config['mappings'];
 
         $default = [
             'instance'   => null,
@@ -110,42 +110,42 @@ class ContainerBuilder extends Component
             'type'       => null,
         ];
 
-        foreach ($schemas as $id => $schema) {
-            $schema = Config::make($default)->mergeWith($schema)->toArray();
+        foreach ($mappings as $id => $mapping) {
+            $mapping = Config::make($default)->merge($mapping)->all();
 
-            if (empty($schema['name'])) {
-                throw new \RuntimeException(\vsprintf('Schema name is empty!', []));
+            if (empty($mapping['name'])) {
+                throw new \RuntimeException(\vsprintf('mapping name is empty!', []));
             }
 
             if (
-                ! \class_exists($schema['instance'])
-                || ! \is_a($schema['instance'], Schema::class, true)
+                ! \class_exists($mapping['instance'])
+                || ! \is_a($mapping['instance'], Mapping::class, true)
             ) {
                 throw new \LogicException(
                     \vsprintf(
-                        "Can't create schema, '%s' must extend from %s or its child class.",
+                        "Can't create mapping, '%s' must extend from %s or its child class.",
                         [
-                            \get_class($schema['schema']),
-                            Schema::class,
+                            $mapping['mapping'],
+                            Mapping::class,
                         ]
                     )
                 );
             }
 
-            $instance = $schema['instance'];
-            $name     = $schema['name'];
-            $params   = $schema['params'];
-            $aliases  = $schema['aliases'];
-            $type     = $schema['type'];
+            $instance = $mapping['instance'];
+            $name     = $mapping['name'];
+            $params   = $mapping['params'];
+            $aliases  = $mapping['aliases'];
+            $type     = $mapping['type'];
 
             $entry = new $instance($id, $name, $params, $aliases, $type, $this->logger);
 
-            $container->schemas()->set($entry->id(), $entry);
+            $container->mappings()->set($entry->id(), $entry);
 
-            $this->logger->debug(\vsprintf('Schema with ID: "%s" has been created', [$entry->id()]));
+            $this->logger->debug(\vsprintf('Mapping with ID: "%s" has been created', [$entry->id()]));
         }//end foreach
 
-        unset($schemas, $default);
+        unset($mappings, $default);
 
         return $this;
     }
@@ -163,13 +163,14 @@ class ContainerBuilder extends Component
         $default = [
             'instance'   => Index::class,
             'name'       => null,
-            'connection' => null,
-            'schema'     => null,
+            'group'      => null,
+            'mapping'    => null,
             'config'     => [],
+            'connection' => null,
         ];
 
         foreach ($indices as $id => $index) {
-            $index = Config::make($default)->mergeWith($index)->toArray();
+            $index = Config::make($default)->merge($index)->all();
 
             if (empty($index['name'])) {
                 throw new \RuntimeException(\vsprintf('Index name is empty!', []));
@@ -183,7 +184,7 @@ class ContainerBuilder extends Component
                     \vsprintf(
                         "Can't create index, '%s' must extend from %s or its child class.",
                         [
-                            \get_class($index['instance']),
+                            $index['instance'],
                             Index::class,
                         ]
                     )
@@ -206,15 +207,15 @@ class ContainerBuilder extends Component
             }
 
             if (
-                ! empty($index['schema'])
-                && ! $container->schemas()->has($index['schema'])
+                ! empty($index['mapping'])
+                && ! $container->mappings()->has($index['mapping'])
             ) {
                 throw new \RuntimeException(
                     \vsprintf(
-                        'Could not create index "%s": schema with id "%s" is not defined!',
+                        'Could not create index "%s": mapping with id "%s" is not defined!',
                         [
                             $index['name'],
-                            $index['schema'],
+                            $index['mapping'],
                         ]
                     )
                 );
@@ -222,11 +223,12 @@ class ContainerBuilder extends Component
 
             $instance   = $index['instance'];
             $name       = $index['name'];
-            $connection = $container->connections()->get($index['connection']);
+            $group      = $index['group'];
+            $mapping    = $container->mappings()->getIfSet((string) $index['mapping']);
             $params     = $index['config'];
-            $schema     = $container->schemas()->getIfSet($index['schema']);
+            $connection = $container->connections()->get($index['connection']);
 
-            $entry = new $instance($id, $name, $connection, $schema, $params, $this->logger);
+            $entry = new $instance($id, $name, $connection, $mapping, $group, $params, $this->logger);
 
             $container->indices()->set($entry->id(), $entry);
 

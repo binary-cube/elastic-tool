@@ -25,9 +25,9 @@ class Connection extends Component
     ];
 
     /**
-     * @var array
+     * @var Config
      */
-    protected $config = [];
+    protected $config;
 
     /**
      * @var Client
@@ -45,15 +45,15 @@ class Connection extends Component
     {
         parent::__construct($id, $logger);
 
-        $this->config = Config::make(static::DEFAULTS)->mergeWith($config)->toArray();
+        $this->config = Config::make(static::DEFAULTS)->merge($config);
 
         $this->refresh();
     }
 
     /**
-     * @return array
+     * @return Config
      */
-    public function config(): array
+    public function config(): Config
     {
         return $this->config;
     }
@@ -85,10 +85,9 @@ class Connection extends Component
 
         if (isset($this->logger) && $this->config['enableLogging']) {
             $config['logger'] = $this->logger;
-            ;
         }
 
-        return ClientBuilder::fromConfig($config, true);
+        return ClientBuilder::fromConfig($config->all(), true);
     }
 
     /**

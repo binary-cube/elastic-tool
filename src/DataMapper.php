@@ -7,17 +7,17 @@ namespace BinaryCube\ElasticTool;
 /**
  * Class DataMapper
  *
- * A simple tool that takes as input an array and output an array following the given Schema(@see Schema) structure.
+ * A simple tool that takes as input an array and output an array following the given Mapping(@see Mapping) structure.
  *
- * WARNING: Properties that are not found in schema they will be dropped.
+ * WARNING: Properties that are not found in Mapping they will be dropped.
  */
 class DataMapper
 {
 
     /**
-     * @var Schema
+     * @var Mapping
      */
-    protected $schema;
+    protected $mapping;
 
     /**
      * @var array
@@ -25,23 +25,23 @@ class DataMapper
     protected $properties = [];
 
     /**
-     * @param Schema $schema
+     * @param Mapping $mapping
      *
      * @return static
      */
-    public static function usingSchema(Schema $schema)
+    public static function usingMapping(Mapping $mapping)
     {
-        return new static($schema);
+        return new static($mapping);
     }
 
     /**
      * Constructor.
      *
-     * @param Schema $schema
+     * @param Mapping $mapping
      */
-    public function __construct(Schema $schema)
+    public function __construct(Mapping $mapping)
     {
-        $this->schema = $schema;
+        $this->mapping = $mapping;
     }
 
     /**
@@ -85,8 +85,8 @@ class DataMapper
      */
     protected function buildProperties(): array
     {
-        $properties = self::propertiesToFlat($this->schema->getProperties());
-        $aliases    = self::propertyAliasesToFlat($this->schema->getAliases());
+        $properties = self::propertiesToFlat($this->mapping->getProperties());
+        $aliases    = self::propertyAliasesToFlat($this->mapping->getAliases());
 
         // Bind aliases to main property.
         foreach ($aliases as $alias => $key) {
@@ -143,7 +143,7 @@ class DataMapper
                     'map' => \array_flip(\array_keys(\array_filter(
                         $properties,
                         function ($item) {
-                            if (isset($item['type']) && $item['type'] === SchemaFieldType::NESTED) {
+                            if (isset($item['type']) && $item['type'] === MappingFieldType::NESTED) {
                                 return false;
                             }
 
@@ -160,10 +160,10 @@ class DataMapper
             $result[$pKey] = [
                 'key'   => $key,
                 'type'  => $type,
-                'map'   => ($type === SchemaFieldType::NESTED) ? \array_flip(\array_keys($value['properties'])) : [],
+                'map'   => ($type === MappingFieldType::NESTED) ? \array_flip(\array_keys($value['properties'])) : [],
             ];
 
-            if ($type === SchemaFieldType::NESTED) {
+            if ($type === MappingFieldType::NESTED) {
                 $result = \array_merge($result, self::propertiesToFlat($value['properties'], $pKey));
             }
         }
@@ -198,63 +198,63 @@ class DataMapper
 
     /**
      * @param array       $data
-     * @param array       $schema
+     * @param array       $mapping
      * @param null|string $parent
      *
      * @return array
      */
-    protected static function buildMap(array $data, array $schema, $parent = null)
+    protected static function buildMap(array $data, array $mapping, $parent = null)
     {
         $result = [];
 
         foreach ($data as $key => $value) {
             $pKey = ! isset($parent) ? $key : ($parent . '.' . $key);
 
-            if (! isset($schema['flat'][$pKey])) {
+            if (! isset($mapping['flat'][$pKey])) {
                 continue;
             }
 
-            $originalKey = $schema['flat'][$pKey]['key'];
-            $type        = $schema['flat'][$pKey]['type'];
+            $originalKey = $mapping['flat'][$pKey]['key'];
+            $type        = $mapping['flat'][$pKey]['type'];
 
             // Cast to Type.
             switch ($type) {
-                case SchemaFieldType::TEXT:
-                case SchemaFieldType::KEYWORD:
+                case MappingFieldType::TEXT:
+                case MappingFieldType::KEYWORD:
                     $value = (string) $value;
                     break;
 
-                case SchemaFieldType::SHORT:
-                case SchemaFieldType::INTEGER:
+                case MappingFieldType::SHORT:
+                case MappingFieldType::INTEGER:
                     $value = (int) $value;
                     break;
 
-                case SchemaFieldType::DOUBLE:
+                case MappingFieldType::DOUBLE:
                     $value = (double) $value;
                     break;
 
-                case SchemaFieldType::FLOAT:
+                case MappingFieldType::FLOAT:
                     $value = (float) $value;
                     break;
 
-                case SchemaFieldType::BOOLEAN:
-                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                case MappingFieldType::BOOLEAN:
+                    $value = \filter_var($value, FILTER_VALIDATE_BOOLEAN);
                     break;
 
-                case SchemaFieldType::DATE:
+                case MappingFieldType::DATE:
                     if (empty($value) == true || $value == '0000-00-00') {
                         $value = null;
                     }
                     break;
 
-                case SchemaFieldType::NESTED:
+                case MappingFieldType::NESTED:
                     // Check if $value is associative.
-                    if (\is_array(current($value))) {
+                    if (\is_array(\current($value))) {
                         foreach ($value as $k => $v) {
-                            $value[$k] = self::buildMap($v, $schema, $pKey);
+                            $value[$k] = self::buildMap($v, $mapping, $pKey);
                         }
                     } else {
-                        $value = self::buildMap($value, $schema, $pKey);
+                        $value = self::buildMap($value, $mapping, $pKey);
                     }
                     break;
             }//end switch
@@ -262,9 +262,9 @@ class DataMapper
             $result[$originalKey] = $value;
         }//end foreach
 
-        // Keep the same order as was defined in schema.
+        // Keep the same order as was defined in mapping.
         $_p     = isset($parent) ? $parent : 'root';
-        $result = \array_merge(\array_intersect_key(($schema['flat'][$_p]['map']), $result), $result);
+        $result = \array_merge(\array_intersect_key(($mapping['flat'][$_p]['map']), $result), $result);
 
         return $result;
     }

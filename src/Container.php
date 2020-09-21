@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace BinaryCube\ElasticTool;
 
-use BinaryCube\ElasticTool\Collection\IndexList;
-use BinaryCube\ElasticTool\Collection\SchemaList;
-use BinaryCube\ElasticTool\Collection\ConnectionList;
+use BinaryCube\ElasticTool\Collection\IndexCollection;
+use BinaryCube\ElasticTool\Collection\MappingCollection;
+use BinaryCube\ElasticTool\Collection\ConnectionCollection;
 
 /**
  * Class Container
@@ -15,17 +15,17 @@ class Container
 {
 
     /**
-     * @var ConnectionList
+     * @var ConnectionCollection
      */
     private $connections;
 
     /**
-     * @var SchemaList
+     * @var MappingCollection
      */
-    private $schemas;
+    private $mappings;
 
     /**
-     * @var IndexList
+     * @var IndexCollection
      */
     private $indices;
 
@@ -34,31 +34,31 @@ class Container
      */
     public function __construct()
     {
-        $this->connections = new ConnectionList();
-        $this->schemas     = new SchemaList();
-        $this->indices     = new IndexList();
+        $this->connections = new ConnectionCollection();
+        $this->mappings    = new MappingCollection();
+        $this->indices     = new IndexCollection();
     }
 
     /**
-     * @return ConnectionList
+     * @return ConnectionCollection
      */
-    public function connections(): ConnectionList
+    public function connections(): ConnectionCollection
     {
         return $this->connections;
     }
 
     /**
-     * @return SchemaList
+     * @return MappingCollection
      */
-    public function schemas(): SchemaList
+    public function mappings(): MappingCollection
     {
-        return $this->schemas;
+        return $this->mappings;
     }
 
     /**
-     * @return IndexList
+     * @return IndexCollection
      */
-    public function indices(): IndexList
+    public function indices(): IndexCollection
     {
         return $this->indices;
     }

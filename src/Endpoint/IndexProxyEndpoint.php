@@ -43,7 +43,7 @@ final class IndexProxyEndpoint extends Endpoint
     public function execute($params = null, Connection $connection = null)
     {
         $params = empty($params) ? [] : (array) $params;
-        $params = Config::make(static::DEFAULTS)->mergeWith($params)->toArray();
+        $params = Config::make(static::DEFAULTS)->merge($params)->all();
 
         $params['index'] = $this->index->name();
 

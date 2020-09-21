@@ -5,22 +5,24 @@ declare(strict_types=1);
 namespace BinaryCube\ElasticTool\Collection;
 
 /**
- * Class BaseList
+ * Class Collection
  */
-class BaseList
+class Collection
 {
 
     /**
      * @var mixed[]
      */
-    private $items = [];
+    protected $items = [];
 
     /**
-     * @return mixed[]
+     * Constructor.
+     *
+     * @param array $items
      */
-    public function __invoke()
+    public function __construct(array $items = [])
     {
-        return $this->all();
+        $this->items = $items;
     }
 
     /**
@@ -71,6 +73,14 @@ class BaseList
         }
 
         return $default;
+    }
+
+    /**
+     * @return array
+     */
+    public function ids(): array
+    {
+        return \array_keys($this->items);
     }
 
     /**

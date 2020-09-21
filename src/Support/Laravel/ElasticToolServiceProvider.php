@@ -7,6 +7,14 @@ namespace BinaryCube\ElasticTool\Support\Laravel;
 use Psr\Log\LoggerInterface;
 use Illuminate\Foundation\Application;
 use BinaryCube\ElasticTool\ElasticTool;
+use BinaryCube\ElasticTool\Support\Laravel\Console\Commands\ListCommand;
+use BinaryCube\ElasticTool\Support\Laravel\Console\Commands\StatsIndexCommand;
+use BinaryCube\ElasticTool\Support\Laravel\Console\Commands\OpenIndexCommand;
+use BinaryCube\ElasticTool\Support\Laravel\Console\Commands\CloseIndexCommand;
+use BinaryCube\ElasticTool\Support\Laravel\Console\Commands\DeleteIndexCommand;
+use BinaryCube\ElasticTool\Support\Laravel\Console\Commands\CreateIndexCommand;
+use BinaryCube\ElasticTool\Support\Laravel\Console\Commands\UpdateIndexCommand;
+use BinaryCube\ElasticTool\Support\Laravel\Console\Commands\RefreshIndexCommand;
 
 /**
  * Class ElasticToolServiceProvider
@@ -86,11 +94,13 @@ class ElasticToolServiceProvider extends \Illuminate\Support\ServiceProvider
         $this->commands(
             [
                 ListCommand::class,
-                SetupCommand::class,
-                ConsumerCommand::class,
-                DeleteAllCommand::class,
-                PurgeCommand::class,
-                PublisherCommand::class,
+                CreateIndexCommand::class,
+                UpdateIndexCommand::class,
+                DeleteIndexCommand::class,
+                OpenIndexCommand::class,
+                CloseIndexCommand::class,
+                RefreshIndexCommand::class,
+                StatsIndexCommand::class,
             ]
         );
     }

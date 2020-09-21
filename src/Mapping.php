@@ -7,9 +7,9 @@ namespace BinaryCube\ElasticTool;
 use Psr\Log\LoggerInterface;
 
 /**
- * Class Schema
+ * Class Mapping
  */
-abstract class Schema extends Component
+abstract class Mapping extends Component
 {
 
     /**
@@ -109,7 +109,7 @@ abstract class Schema extends Component
     }
 
     /**
-     * Sets the schema properties.
+     * Sets the mapping properties.
      *
      * @param array $properties Properties
      *
@@ -123,7 +123,7 @@ abstract class Schema extends Component
     }
 
     /**
-     * Gets the schema properties.
+     * Gets the mapping properties.
      *
      * @return array
      */
@@ -161,7 +161,7 @@ abstract class Schema extends Component
     }
 
     /**
-     * Sets the schema _meta.
+     * Sets the mapping _meta.
      *
      * @param array $meta metadata
      *

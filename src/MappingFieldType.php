@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace BinaryCube\ElasticTool;
 
 /**
- * Class SchemaType
+ * Class MappingFieldType
  */
-final class SchemaFieldType
+final class MappingFieldType
 {
+
     /**
      * Field types declaration.
      */

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace BinaryCube\ElasticTool\Support\Laravel\Console\Commands;
 
-use Symfony\Component\Console\Helper\TableSeparator;
-
 /**
  * Class ListCommand
  */
@@ -13,17 +11,17 @@ class ListCommand extends BaseCommand
 {
 
     const
-        GROUP_ALL     = 'all',
-        GROUP_SCHEMAS = 'schemas',
-        GROUP_INDICES = 'indices';
+        GROUP_ALL      = 'all',
+        GROUP_MAPPINGS = 'mappings',
+        GROUP_INDICES  = 'indices';
 
     /**
      * @var array
      */
     protected $allowedGroups = [
-        self::GROUP_ALL,
-        self::GROUP_SCHEMAS,
-        self::GROUP_INDICES,
+        self::GROUP_ALL      => true,
+        self::GROUP_MAPPINGS => true,
+        self::GROUP_INDICES  => true,
     ];
 
     /**
@@ -40,7 +38,7 @@ class ListCommand extends BaseCommand
      *
      * @var string
      */
-    protected $description = 'Listing container options like: schemas, indices. Default is `all`.';
+    protected $description = 'Listing registered mappings and indices';
 
     /**
      * Execute the console command.
@@ -50,7 +48,7 @@ class ListCommand extends BaseCommand
     public function handleInternal()
     {
         $group = $this->input->getArgument('group');
-        $group = \in_array($group, $this->allowedGroups) ? $group : self::GROUP_ALL;
+        $group = isset($this->allowedGroups[$group]) ? $group : self::GROUP_ALL;
 
         $rows = [];
 
@@ -59,8 +57,8 @@ class ListCommand extends BaseCommand
                 $rows = $this->buildAllRow();
                 break;
 
-            case self::GROUP_SCHEMAS:
-                $rows = $this->buildSchemaRows();
+            case self::GROUP_MAPPINGS:
+                $rows = $this->buildMappingRows();
                 break;
 
             case self::GROUP_INDICES:
@@ -68,7 +66,7 @@ class ListCommand extends BaseCommand
                 break;
         }
 
-        $this->table(['Group', 'Values'], $rows);
+        $this->table(['TYPE', 'GROUP', 'ID', 'NAME', 'USING MAPPING ID'], $rows, 'box');
 
         return 0;
     }
@@ -78,13 +76,9 @@ class ListCommand extends BaseCommand
      */
     protected function buildAllRow()
     {
-        $separator = new TableSeparator();
-
         return (
             \array_merge(
-                [],
-                $this->buildSchemaRows(),
-                [$separator],
+                $this->buildMappingRows(),
                 $this->buildIndicesRows(),
             )
         );
@@ -93,21 +87,15 @@ class ListCommand extends BaseCommand
     /**
      * @return array
      */
-    protected function buildSchemaRows()
+    protected function buildMappingRows()
     {
-        $result = [];
-        $items  = [];
+        $rows = [];
 
-        foreach ($this->esTool->container()->schemas()->all() as $id => $schema) {
-            $items[] = \vsprintf('%s (%s)', [$id, $schema->name()]);
+        foreach ($this->esTool->container()->mappings()->all() as $mapping) {
+            $rows[] = ['MAPPING', $mapping->id(), $mapping->name()];
         }
 
-        $result[] = [
-            'schemas',
-            \implode(PHP_EOL, $items),
-        ];
-
-        return $result;
+        return $rows;
     }
 
     /**
@@ -115,19 +103,19 @@ class ListCommand extends BaseCommand
      */
     protected function buildIndicesRows()
     {
-        $result = [];
-        $items  = [];
+        $rows = [];
 
-        foreach ($this->esTool->container()->indices()->all() as $id => $index) {
-            $items[] = \vsprintf('%s (%s)', [$id, $index->name()]);
+        foreach ($this->esTool->container()->indices()->all() as $index) {
+            $rows[] = [
+                'INDEX',
+                ($index->group() ?? '-'),
+                $index->id(),
+                $index->name(),
+                ($index->isHavingMappingSet() ? $index->mapping()->id() : '-'),
+            ];
         }
 
-        $result[] = [
-            'indices',
-            \implode(PHP_EOL, $items),
-        ];
-
-        return $result;
+        return $rows;
     }
 
 }
