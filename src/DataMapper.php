@@ -137,17 +137,21 @@ class DataMapper
     {
         $result = [];
 
+        $innerTypes = [
+            MappingFieldType::NESTED,
+            MappingFieldType::OBJECT,
+        ];
+
         if (! isset($parent)) {
             $result['root'] =
                 [
                     'map' => \array_flip(\array_keys(\array_filter(
                         $properties,
-                        function ($item) {
-                            if (isset($item['type']) && $item['type'] === MappingFieldType::NESTED) {
-                                return false;
-                            }
-
-                            return true;
+                        function ($item) use ($innerTypes) {
+                            return ! (
+                                isset($item['type'])
+                                || (isset($item['properties']) && (\is_array($item['properties'])))
+                            );
                         }
                     ))),
                 ];
@@ -157,16 +161,24 @@ class DataMapper
             $pKey = ! isset($parent) ? $key : ($parent . '.' . $key);
             $type = isset($value['type']) ? $value['type'] : null;
 
+            if (
+                ! isset($type)
+                && isset($value['properties'])
+                && (\is_array($value['properties']))
+            ) {
+                $type = MappingFieldType::OBJECT;
+            }
+
             $result[$pKey] = [
                 'key'   => $key,
                 'type'  => $type,
-                'map'   => ($type === MappingFieldType::NESTED) ? \array_flip(\array_keys($value['properties'])) : [],
+                'map'   => \in_array($type, $innerTypes) ? \array_flip(\array_keys($value['properties'])) : [],
             ];
 
-            if ($type === MappingFieldType::NESTED) {
+            if (\in_array($type, $innerTypes)) {
                 $result = \array_merge($result, self::propertiesToFlat($value['properties'], $pKey));
             }
-        }
+        }//end foreach
 
         return $result;
     }
@@ -247,6 +259,7 @@ class DataMapper
                     }
                     break;
 
+                case MappingFieldType::OBJECT:
                 case MappingFieldType::NESTED:
                     // Check if $value is associative.
                     if (\is_array(\current($value))) {
