@@ -60,11 +60,19 @@ class Component
      *
      * @return $this
      */
-    public function logger(LoggerInterface $logger): self
+    public function setLogger(LoggerInterface $logger): self
     {
         $this->logger = $logger;
 
         return $this;
+    }
+
+    /**
+     * @return LoggerInterface|NullLogger
+     */
+    public function getLogger()
+    {
+        return $this->logger;
     }
 
     /**

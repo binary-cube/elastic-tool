@@ -39,6 +39,40 @@ class ElasticTool extends Component
     }
 
     /**
+     * @return array
+     */
+    public function getConfig(): array
+    {
+        return $this->config;
+    }
+
+    /**
+     * @param array $config
+     *
+     * @return $this
+     */
+    public function setConfig(array $config): self
+    {
+        $this->config    = $config;
+        $this->container = null;
+
+        return $this;
+    }
+
+    /**
+     * @param array $config
+     *
+     * @return $this
+     */
+    public function mergeWithConfig(array $config): self
+    {
+        $this->config    = Config::make($this->config)->merge($config)->all();
+        $this->container = null;
+
+        return $this;
+    }
+
+    /**
      * @return Container
      */
     public function container(): Container
