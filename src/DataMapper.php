@@ -241,10 +241,13 @@ class DataMapper
                     $value = (int) $value;
                     break;
 
+                case MappingFieldType::LONG:
                 case MappingFieldType::DOUBLE:
                     $value = (double) $value;
                     break;
 
+                case MappingFieldType::SCALED_FLOAT:
+                case MappingFieldType::HALF_FLOAT:
                 case MappingFieldType::FLOAT:
                     $value = (float) $value;
                     break;
