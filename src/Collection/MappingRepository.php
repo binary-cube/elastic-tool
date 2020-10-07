@@ -8,7 +8,7 @@ use BinaryCube\ElasticTool\Mapping;
 use BinaryCube\ElasticTool\Support\Collection;
 
 /**
- * Class MappingCollection
+ * Class MappingRepository
  *
  * @method Mapping[]     __invoke()
  * @method $this         put(string $id, Mapping $item)
@@ -19,7 +19,7 @@ use BinaryCube\ElasticTool\Support\Collection;
  * @method $this         clear()
  * @method bool          has(string $id)
  */
-class MappingCollection extends Collection
+class MappingRepository extends Collection
 {
     //
 }

@@ -14,7 +14,7 @@ class ElasticTool extends Component
 {
 
     /**
-     * @var array
+     * @var Config
      */
     protected $config;
 
@@ -33,41 +33,17 @@ class ElasticTool extends Component
     {
         parent::__construct(null, $logger);
 
-        $this->config = $config;
+        $this->config = Config::make($config);
 
         $this->logger->debug(\vsprintf('Instance of "%s" has been created', [self::class]));
     }
 
     /**
-     * @return array
-     */
-    public function getConfig(): array
-    {
-        return $this->config;
-    }
-
-    /**
-     * @param array $config
-     *
      * @return $this
      */
-    public function setConfig(array $config): self
+    protected function build()
     {
-        $this->config    = $config;
-        $this->container = null;
-
-        return $this;
-    }
-
-    /**
-     * @param array $config
-     *
-     * @return $this
-     */
-    public function mergeWithConfig(array $config): self
-    {
-        $this->config    = Config::make($this->config)->merge($config)->all();
-        $this->container = null;
+        $this->container = ContainerBuilder::create($this->config, $this->logger);
 
         return $this;
     }
@@ -77,11 +53,27 @@ class ElasticTool extends Component
      */
     public function container(): Container
     {
-        if (empty($this->container)) {
-            $this->container = ContainerBuilder::create($this->config, $this->logger);
+        if (! isset($this->container)) {
+            $this->build();
         }
 
         return $this->container;
+    }
+
+    /**
+     * @param array $config
+     *
+     * @return $this
+     */
+    public function reload($config = [])
+    {
+        $this->config = Config::make($config);
+
+        if (isset($this->container)) {
+            $this->build();
+        }
+
+        return $this;
     }
 
 }

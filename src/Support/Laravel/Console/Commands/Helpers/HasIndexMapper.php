@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BinaryCube\ElasticTool\Support\Laravel\Console\Commands\Helpers;
 
-use BinaryCube\ElasticTool\Collection\IndexCollection;
+use BinaryCube\ElasticTool\Collection\IndexRepository;
 
 /**
  * Trait HasIndexMapper
@@ -26,7 +26,7 @@ trait HasIndexMapper
         ];
 
         /**
-         * @var IndexCollection $indices
+         * @var IndexRepository $indices
          */
         $indices = $this->esTool->container()->indices();
         $indices = empty($group) ? $indices : $indices->inGroup($group);

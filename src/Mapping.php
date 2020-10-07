@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace BinaryCube\ElasticTool;
 
 use Psr\Log\LoggerInterface;
+use BinaryCube\ElasticTool\Support\LoggerAwareTrait;
 
 /**
  * Class Mapping
  */
 abstract class Mapping extends Component
 {
+    use LoggerAwareTrait;
 
     /**
      * @var string

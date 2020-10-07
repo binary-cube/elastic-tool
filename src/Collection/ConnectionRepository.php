@@ -8,7 +8,7 @@ use BinaryCube\ElasticTool\Connection;
 use BinaryCube\ElasticTool\Support\Collection;
 
 /**
- * Class ConnectionCollection
+ * Class ConnectionRepository
  *
  * @method Connection[]     __invoke()
  * @method $this            put(string $id, Connection $item)
@@ -19,7 +19,7 @@ use BinaryCube\ElasticTool\Support\Collection;
  * @method $this            clear()
  * @method bool             has(string $id)
  */
-class ConnectionCollection extends Collection
+class ConnectionRepository extends Collection
 {
     //
 }

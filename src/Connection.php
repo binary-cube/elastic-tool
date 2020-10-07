@@ -7,12 +7,14 @@ namespace BinaryCube\ElasticTool;
 use Elasticsearch\Client;
 use Psr\Log\LoggerInterface;
 use Elasticsearch\ClientBuilder;
+use BinaryCube\ElasticTool\Support\LoggerAwareTrait;
 
 /**
  * Class Connection
  */
 class Connection extends Component
 {
+    use LoggerAwareTrait;
 
     /**
      * @const array Default connections parameters

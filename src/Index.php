@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace BinaryCube\ElasticTool;
 
 use Psr\Log\LoggerInterface;
+use BinaryCube\ElasticTool\Support\Collection;
+use BinaryCube\ElasticTool\Support\LoggerAwareTrait;
 use BinaryCube\ElasticTool\Endpoint\CatProxyEndpoint;
 use BinaryCube\ElasticTool\Support\ParameterAwareTrait;
 use BinaryCube\ElasticTool\Endpoint\IndexProxyEndpoint;
@@ -14,6 +16,7 @@ use BinaryCube\ElasticTool\Endpoint\IndexProxyEndpoint;
  */
 class Index extends Component
 {
+    use LoggerAwareTrait;
     use ParameterAwareTrait;
 
     /**
@@ -170,7 +173,7 @@ class Index extends Component
     public function isOpen($params = null, Connection $connection = null): bool
     {
         $params = (
-            Config::make((array) $params)
+            Collection::make((array) $params)
                 ->merge(['index' => $this->name])
                 ->all()
         );
@@ -255,13 +258,13 @@ class Index extends Component
             (new CatProxyEndpoint($this, $this->logger))
                 ->viaMethod('indices')
                 ->execute(
-                    Config::make((array) $params)->merge(['index' => $this->name])->all(),
+                    Collection::make((array) $params)->merge(['index' => $this->name])->all(),
                     $connection
                 )
         );
 
         return (
-            Config::make([])
+            Collection::make([])
                 ->merge(['summary' => $cat[0]])
                 ->merge(['detailed' => $status['indices'][$this->name]])
                 ->all()
@@ -283,7 +286,7 @@ class Index extends Component
         $params = [
             'body' => $this->sanitizeData([
                 'settings' => (
-                    Config::make([])
+                    Collection::make([])
                         ->merge((array) $this->config->get('main', []))
                         ->merge((array) $this->config->get('create', []))
                         ->merge((array) $params)
@@ -314,7 +317,7 @@ class Index extends Component
         $params = [
             'body' => $this->sanitizeData([
                 'settings' => (
-                    Config::make([])
+                    Collection::make([])
                         ->merge((array) $this->config->get('main', []))
                         ->merge((array) $this->config->get('update', []))
                         ->merge((array) $params)
@@ -352,7 +355,7 @@ class Index extends Component
 
         $params = [
             'body' => (
-                Config::make((array) $params)
+                Collection::make((array) $params)
                     ->merge($this->mapping->toArray())
                     ->all()
             ),
@@ -441,7 +444,7 @@ class Index extends Component
     public function toArray($includeMapping = true): array
     {
         $data['settings'] = (
-            Config::make([])
+            Collection::make([])
                 ->merge((array) $this->config->get('main', []))
                 ->merge((array) $this->config->get('create', []))
                 ->merge((array) $this->config->get('update', []))

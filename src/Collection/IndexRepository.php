@@ -8,7 +8,7 @@ use BinaryCube\ElasticTool\Index;
 use BinaryCube\ElasticTool\Support\Collection;
 
 /**
- * Class IndexCollection
+ * Class IndexRepository
  *
  * @method Index[]     __invoke()
  * @method $this       put(string $id, Index $item)
@@ -19,7 +19,7 @@ use BinaryCube\ElasticTool\Support\Collection;
  * @method $this       clear()
  * @method bool        has(string $id)
  */
-class IndexCollection extends Collection
+class IndexRepository extends Collection
 {
 
     /**
@@ -27,9 +27,9 @@ class IndexCollection extends Collection
      *
      * @param string $group
      *
-     * @return IndexCollection
+     * @return IndexRepository
      */
-    public function inGroup(string $group): IndexCollection
+    public function inGroup(string $group): IndexRepository
     {
         if (empty($group)) {
             return new static();

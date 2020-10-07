@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BinaryCube\ElasticTool\Endpoint;
 
-use BinaryCube\ElasticTool\Config;
 use BinaryCube\ElasticTool\Connection;
+use BinaryCube\ElasticTool\Support\Collection;
 
 /**
  * Class CatProxyEndpoint
@@ -43,7 +43,7 @@ final class CatProxyEndpoint extends Endpoint
     public function execute($params = null, Connection $connection = null)
     {
         $params    = empty($params) ? [] : (array) $params;
-        $params    = Config::make(static::DEFAULTS)->merge($params)->all();
+        $params    = Collection::make(static::DEFAULTS)->merge($params)->all();
         $viaMethod = $this->methodName;
 
         return (

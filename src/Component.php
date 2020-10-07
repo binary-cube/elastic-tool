@@ -54,28 +54,6 @@ class Component
     }
 
     /**
-     * Sets a logger instance on the object.
-     *
-     * @param LoggerInterface $logger
-     *
-     * @return $this
-     */
-    public function setLogger(LoggerInterface $logger): self
-    {
-        $this->logger = $logger;
-
-        return $this;
-    }
-
-    /**
-     * @return LoggerInterface|NullLogger
-     */
-    public function getLogger()
-    {
-        return $this->logger;
-    }
-
-    /**
      * @return void
      */
     public function __destruct()

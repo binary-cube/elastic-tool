@@ -11,6 +11,7 @@ use BinaryCube\ElasticTool\Mapping;
 use BinaryCube\ElasticTool\Container;
 use BinaryCube\ElasticTool\Component;
 use BinaryCube\ElasticTool\Connection;
+use BinaryCube\ElasticTool\Support\Collection;
 
 /**
  * Class ContainerBuilder
@@ -28,12 +29,12 @@ class ContainerBuilder extends Component
     ];
 
     /**
-     * @param array                $config
+     * @param Config               $config
      * @param LoggerInterface|null $logger
      *
      * @return Container
      */
-    public static function create(array $config, $logger = null): Container
+    public static function create(Config $config, $logger = null): Container
     {
         $builder = new static($logger);
 
@@ -51,13 +52,13 @@ class ContainerBuilder extends Component
     }
 
     /**
-     * @param array $config
+     * @param Config $config
      *
      * @return Container
      */
-    public function build(array $config): Container
+    public function build(Config $config): Container
     {
-        $config = Config::make(static::DEFAULTS)->merge($config)->all();
+        $config = Collection::make(static::DEFAULTS)->merge($config->all())->all();
 
         $container = new Container();
 
@@ -112,7 +113,7 @@ class ContainerBuilder extends Component
         ];
 
         foreach ($mappings as $id => $mapping) {
-            $mapping = Config::make($default)->merge($mapping)->all();
+            $mapping = Collection::make($default)->merge($mapping)->all();
 
             if (empty($mapping['name'])) {
                 throw new \RuntimeException(\vsprintf('mapping name is empty!', []));
@@ -172,7 +173,7 @@ class ContainerBuilder extends Component
         ];
 
         foreach ($indices as $id => $index) {
-            $index = Config::make($default)->merge($index)->all();
+            $index = Collection::make($default)->merge($index)->all();
 
             if (empty($index['name'])) {
                 throw new \RuntimeException(\vsprintf('Index name is empty!', []));
