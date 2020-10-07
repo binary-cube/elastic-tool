@@ -148,7 +148,7 @@ abstract class Mapping extends Component
                 continue;
             }
 
-            $this->aliases[$property] = (array) $alias;
+            $this->aliases[$property] = $alias;
         }
 
         return $this;
