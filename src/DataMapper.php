@@ -233,7 +233,13 @@ class DataMapper
             switch ($type) {
                 case MappingFieldType::TEXT:
                 case MappingFieldType::KEYWORD:
-                    $value = (string) $value;
+                    if (\is_array($value)) {
+                        foreach ($value as $k => $v) {
+                            $value[$k] = (string) $v;
+                        }
+                    } else {
+                        $value = (string) $value;
+                    }
                     break;
 
                 case MappingFieldType::SHORT:
