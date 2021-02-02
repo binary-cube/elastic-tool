@@ -273,6 +273,10 @@ class DataMapper
                     // Check if $value is associative.
                     if (\is_array(\current($value))) {
                         foreach ($value as $k => $v) {
+                            if (isset($mapping['flat'][$pKey . '.' . $k])) {
+                                $pKey = $pKey . '.' . $k;
+                            }
+
                             $value[$k] = self::buildMap($v, $mapping, $pKey);
                         }
                     } else {
