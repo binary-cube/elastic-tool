@@ -208,6 +208,7 @@ class DataMapper
         return $result;
     }
 
+    
     /**
      * @param array       $data
      * @param array       $mapping
@@ -228,64 +229,59 @@ class DataMapper
 
             $originalKey = $mapping['flat'][$pKey]['key'];
             $type        = $mapping['flat'][$pKey]['type'];
+            $schema      = $mapping['flat'][$pKey];
 
-            // Cast to Type.
             switch ($type) {
-                case MappingFieldType::TEXT:
-                case MappingFieldType::KEYWORD:
+                default:
                     if (\is_array($value)) {
                         foreach ($value as $k => $v) {
-                            $value[$k] = (string) $v;
+                            $value[$k] = self::cast($v, $type);
                         }
                     } else {
-                        $value = (string) $value;
-                    }
-                    break;
-
-                case MappingFieldType::SHORT:
-                case MappingFieldType::INTEGER:
-                    $value = (int) $value;
-                    break;
-
-                case MappingFieldType::LONG:
-                case MappingFieldType::DOUBLE:
-                    $value = (double) $value;
-                    break;
-
-                case MappingFieldType::SCALED_FLOAT:
-                case MappingFieldType::HALF_FLOAT:
-                case MappingFieldType::FLOAT:
-                    $value = (float) $value;
-                    break;
-
-                case MappingFieldType::BOOLEAN:
-                    $value = \filter_var($value, FILTER_VALIDATE_BOOLEAN);
-                    break;
-
-                case MappingFieldType::DATE:
-                    if (empty($value) == true || $value == '0000-00-00') {
-                        $value = null;
+                        $value = self::cast($value, $type);
                     }
                     break;
 
                 case MappingFieldType::OBJECT:
                 case MappingFieldType::NESTED:
-                    // Check if $value is associative.
-                    if (\is_array(\current($value))) {
+                    $newValue = [];
+
+                    if (! self::isAssociative($value, false)) {
                         foreach ($value as $k => $v) {
-                            $nestedPKey = $pKey;
-
-                            if (isset($mapping['flat'][$pKey . '.' . $k])) {
-                                $nestedPKey = ($pKey . '.' . $k);
+                            if (\is_array($v)) {
+                                $newValue[] = self::buildMap($v, $mapping, $pKey);
                             }
-
-                            $value[$k] = self::buildMap($v, $mapping, $nestedPKey);
                         }
                     } else {
-                        $value = self::buildMap($value, $mapping, $pKey);
+                        foreach (\array_keys($schema['map']) as $map) {
+                            if (! isset($mapping['flat'][$pKey . '.' . $map])) {
+                                continue;
+                            }
+
+                            if (! \array_key_exists($map, $value)) {
+                                continue;
+                            }
+
+                            if (\is_array($value[$map]) && self::isAssociative($value[$map])) {
+                                $newValue[$map] = self::buildMap(
+                                    $value[$map],
+                                    $mapping,
+                                    ($pKey . '.' . $map)
+                                );
+                            } else {
+                                $newValue[$map] = self::buildMap(
+                                    [$map => $value[$map]],
+                                    $mapping,
+                                    ($pKey)
+                                )[$map];
+                            }
+                        }
                     }
+
+                    $value = $newValue;
+
                     break;
-            }//end switch
+            }
 
             $result[$originalKey] = $value;
         }//end foreach
@@ -295,6 +291,89 @@ class DataMapper
         $result = \array_merge(\array_intersect_key(($mapping['flat'][$_p]['map']), $result), $result);
 
         return $result;
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $type
+     *
+     * @return mixed
+     */
+    protected static function cast($value, $type)
+    {
+        switch ($type) {
+            case MappingFieldType::TEXT:
+            case MappingFieldType::KEYWORD:
+                $value = (string) $value;
+                break;
+
+            case MappingFieldType::SHORT:
+            case MappingFieldType::INTEGER:
+                $value = (int) $value;
+                break;
+
+            case MappingFieldType::LONG:
+            case MappingFieldType::DOUBLE:
+                $value = (double) $value;
+                break;
+
+            case MappingFieldType::SCALED_FLOAT:
+            case MappingFieldType::HALF_FLOAT:
+            case MappingFieldType::FLOAT:
+                $value = (float) $value;
+                break;
+
+            case MappingFieldType::BOOLEAN:
+                $value = \filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                break;
+
+            case MappingFieldType::DATE:
+                if (empty($value) == true || $value == '0000-00-00') {
+                    $value = null;
+                }
+                break;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Returns a value indicating whether the given array is an associative array.
+     *
+     * An array is associative if all its keys are strings. If `$allStrings` is false,
+     * then an array will be treated as associative if at least one of its keys is a string.
+     *
+     * Note that an empty array will NOT be considered associative.
+     *
+     * @param array $array      the array being checked
+     * @param bool  $allStrings whether the array keys must be all strings in order for
+     *                          the array to be treated as associative.
+     *
+     * @return bool whether the array is associative
+     */
+    protected static function isAssociative(array $array, bool $allStrings = true): bool
+    {
+        if (! \is_array($array) || empty($array)) {
+            return false;
+        }
+
+        if ($allStrings) {
+            foreach ($array as $key => $value) {
+                if (! \is_string($key)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        foreach ($array as $key => $value) {
+            if (\is_string($key)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }
